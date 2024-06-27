@@ -33,7 +33,6 @@ void lerPortaSerial(HANDLE hSerial) {
             return;
         }
 
-        
         Sleep(10);
     }
 }
@@ -117,16 +116,21 @@ int main() {
         printf("Digite sua escolha: ");
         scanf("%d", &escolha);
         getchar(); 
-
-        if (escolha == 1) {
-            lerPortaSerial(hSerial);
-        } else if (escolha == 2) {
-            escreverPortaSerial(hSerial);
-        } else if (escolha == 3) {
-            printf("Saindo...\n");
-            break;
-        } else {
-            printf("Escolha inválida. Tente novamente.\n");
+        
+        switch (escolha) {
+            case 1:
+                lerPortaSerial(hSerial);
+                break;
+            case 2:
+                escreverPortaSerial(hSerial);
+                break;
+            case 3:
+                printf("Saindo...\n");
+                CloseHandle(hSerial);
+                return 0;
+            default:
+                printf("Escolha inválida. Tente novamente.\n");
+                break;
         }
     }
 
