@@ -1,1 +1,3 @@
 # Trabalho-de-PA
+
+O objetivo deste trabalho é desenvolver um sistema de comunicação bidirecional entre um Arduino e um PC, utilizando um display LCD 16x2 e dois pushbuttons. Este sistema permitirá que o usuário interaja de duas maneiras principais: enviando mensagens do Arduino para o PC e recebendo mensagens do PC no Arduino. A criação deste sistema visa demonstrar a viabilidade e a funcionalidade da comunicação bidirecional em tempo real, proporcionando uma interface prática e intuitiva para o usuário, utilizando componentes de hardware comuns e acessíveis. Através deste desenvolvimento, pretende-se explorar e aplicar conceitos de eletrônica e programação, consolidando o entendimento sobre a integração de sistemas embarcados com computadores pessoais.
