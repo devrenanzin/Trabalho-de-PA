@@ -3,67 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include "biblioteca.h"
 
-
-void lerPortaSerial(HANDLE hSerial) {
-    char buffer[256];
-    DWORD bytesRead;
-    int index = 0;
-
-    printf("Aguardando mensagem da porta serial...\n");
-
-    while (1) {
-        if (ReadFile(hSerial, &buffer[index], 1, &bytesRead, NULL)) {
-            if (bytesRead > 0) {
-                if (buffer[index] == '\n') {
-                    buffer[index] = '\0'; 
-                    printf("Mensagem recebida: %s\n", buffer);
-                    return;
-                }
-                index++;
-                if (index >= sizeof(buffer) - 1) {
-                    buffer[index] = '\0';
-                    printf("Buffer cheio, mensagem parcial: %s\n", buffer);
-                    return;
-                }
-            }
-        } else {
-            DWORD dwError = GetLastError();
-            printf("Erro ao ler dados. Código do erro: %lu\n", dwError);
-            return;
-        }
-
-        
-        Sleep(10);
-    }
-}
-
-
-void escreverPortaSerial(HANDLE hSerial) {
-    char data[256];
-    DWORD bytesWritten;
-
-    printf("Digite os dados a serem enviados ou 'exit' para voltar ao menu:\n");
-
-    while (1) {
-        fgets(data, sizeof(data), stdin);
-        data[strcspn(data, "\n")] = 0; 
-
-        if (strcmp(data, "exit") == 0) {
-            break;
-        }
-
-        if (!WriteFile(hSerial, data, strlen(data), &bytesWritten, NULL)) {
-            DWORD dwError = GetLastError();
-            printf("Erro ao enviar dados. Código do erro: %lu\n", dwError);
-            return;
-        }
-        printf("Dados enviados: %s\n", data);
-    }
-}
+#define ZERANDO 0
 
 int main() {
-    const char *portaSerial = "COM5"; 
+    const char *portaSerial = "COM6"; 
     HANDLE hSerial = CreateFile(portaSerial, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
     if (hSerial == INVALID_HANDLE_VALUE) {
@@ -72,7 +17,7 @@ int main() {
         return 1;
     }
 
-    DCB dcbSerialParams = {0};
+    DCB dcbSerialParams = {ZERANDO};
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
 
     if (!GetCommState(hSerial, &dcbSerialParams)) {
@@ -94,10 +39,10 @@ int main() {
         return 1;
     }
 
-    COMMTIMEOUTS timeouts = {0};
+    COMMTIMEOUTS timeouts = {ZERANDO};
     timeouts.ReadIntervalTimeout = MAXDWORD;
-    timeouts.ReadTotalTimeoutConstant = 0;
-    timeouts.ReadTotalTimeoutMultiplier = 0;
+    timeouts.ReadTotalTimeoutConstant = ZERANDO;
+    timeouts.ReadTotalTimeoutMultiplier = ZERANDO;
     timeouts.WriteTotalTimeoutConstant = 50;
     timeouts.WriteTotalTimeoutMultiplier = 10;
 
@@ -108,25 +53,38 @@ int main() {
         return 1;
     }
 
+    Lista listinha;
+    inicializarListinha(&listinha);
+
     int escolha;
     while (1) {
-        printf("\nEscolha a operaçao:\n");
-        printf("1. Ler da porta serial\n");
-        printf("2. Escrever na porta serial\n");
-        printf("3. Sair\n");
+        printf("\nEscolha a operacao:\n");
+        printf("1 -> Ler da porta serial\n");
+        printf("2 -> Escrever na porta serial\n");
+        printf("3 -> Encerrar o codigo\n");
+        printf("4 -> Historico de mensagens recebidas\n");
         printf("Digite sua escolha: ");
         scanf("%d", &escolha);
-        getchar(); 
+        getchar();
 
-        if (escolha == 1) {
-            lerPortaSerial(hSerial);
-        } else if (escolha == 2) {
-            escreverPortaSerial(hSerial);
-        } else if (escolha == 3) {
-            printf("Saindo...\n");
-            break;
-        } else {
-            printf("Escolha inválida. Tente novamente.\n");
+        switch (escolha) {
+            case LER:
+                lerPortaSerial(hSerial,0,&listinha);
+                break;
+            case ESCREVER:
+                escreverPortaSerial(hSerial);
+                break;
+            case SAIR:
+                printf("Saindo...\n");
+                CloseHandle(hSerial);
+                return 0;
+
+            case IMPRIMIR:
+                imprimirBackup(&listinha);
+                break;
+            default:
+                printf("Escolha inválida. Tente novamente.\n");
+                break;
         }
     }
 
