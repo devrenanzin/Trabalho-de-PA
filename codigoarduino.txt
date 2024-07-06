@@ -1,0 +1,144 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define BOTAO_NAVEGACAO_PINO 8
+#define BOTAO_CONFIRMAR_PINO 9
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Inicialize o display LCD com o endereço I2C correto, 16 colunas e 2 linhas
+
+char letras[] = {'u', 'a', 'e', 'i', 'o'};
+int indice_atual = 0;
+char letras_selecionadas[5];
+int letras_selecionadas_count = 0;
+
+bool mensagem_disponivel = false;
+String mensagem;
+
+void setup()
+{
+  pinMode(BOTAO_NAVEGACAO_PINO, INPUT);
+  pinMode(BOTAO_CONFIRMAR_PINO, INPUT);
+  
+  lcd.init(); // Inicialize o display LCD
+  lcd.backlight(); // Ligue o backlight (se disponível)
+  lcd.print("Escolha:");
+  lcd.setCursor(0, 1);
+  lcd.print("()ARDU ()PC");
+
+  Serial.begin(9600); // Inicie a comunicação serial
+}
+
+void loop()
+{
+  char escolha = lerEscolha();
+  
+  if (escolha == 'p') {
+    prepararParaPC();
+  } else if (escolha == 'a') {
+    escolherLetras();
+  }
+  
+  if (mensagem_disponivel) {
+    exibirMensagem();
+  }
+}
+
+char lerEscolha() {
+  char opcao = 0;
+  
+  while (opcao != 'p' && opcao != 'a') {
+    if (digitalRead(BOTAO_NAVEGACAO_PINO) == HIGH) {
+      opcao = 'p';
+    } else if (digitalRead(BOTAO_CONFIRMAR_PINO) == HIGH) {
+      opcao = 'a';
+    }
+
+    if (Serial.available() > 0) { 
+      opcao = Serial.read();
+    }
+
+    delay(100);
+  }
+  
+  return opcao;
+}
+
+void prepararParaPC() {
+  lcd.clear();
+  lcd.print("Aguardando PC...");
+  
+  while (!Serial.available()) {
+    delay(100);
+  }
+  
+  mensagem = Serial.readString();
+  mensagem_disponivel = true;
+
+  exibirMensagem();
+  
+  delay(5000);
+
+  exibirMenu();
+}
+
+void escolherLetras() {
+  indice_atual = 0;
+  letras_selecionadas_count = 0;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Grupo BJ2R's");
+  
+  while (letras_selecionadas_count < 5) {
+    if (digitalRead(BOTAO_NAVEGACAO_PINO) == HIGH) {
+      indice_atual = (indice_atual + 1) % 5;
+      
+      lcd.setCursor(0, 1);
+      lcd.print("Choose: ");
+      lcd.print(letras[indice_atual]);
+      delay(200);
+    }
+    
+    if (digitalRead(BOTAO_CONFIRMAR_PINO) == HIGH) {
+      letras_selecionadas[letras_selecionadas_count] = letras[indice_atual];
+      letras_selecionadas_count++;
+      
+      if (letras_selecionadas_count == 5) {
+        Serial.print("Letras selecionadas: ");
+        for (int i = 0; i < 5; i++) {
+          Serial.print(letras_selecionadas[i]);
+        }
+        Serial.println();
+
+        lcd.clear();
+        lcd.print("Palavra:");
+        lcd.setCursor(0, 1);
+        for (int i = 0; i < 5; i++) {
+          lcd.print(letras_selecionadas[i]);
+        }
+        Serial.println();
+
+        delay(5000);
+
+        exibirMenu();
+      }
+      
+      while (digitalRead(BOTAO_CONFIRMAR_PINO) == HIGH) {
+        delay(50);
+      }
+    }
+  }
+}
+
+void exibirMenu() {
+  lcd.clear();
+  lcd.print("Escolha:");
+  lcd.setCursor(0, 1);
+  lcd.print("()ARDU ()pc");
+}
+
+void exibirMensagem() {
+  lcd.clear();
+  lcd.print(mensagem);
+  mensagem_disponivel = false;
+}
